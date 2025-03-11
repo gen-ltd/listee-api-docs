@@ -1,0 +1,605 @@
+openapi: 3.1.0
+info:
+  title: Listee API
+  version: 1.0.0
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  description: |
+    ## Introduction
+    Welcome to the Listee API documentation. This API allows developers to programmatically access and manipulate task data within the Listee task management platform.
+
+    ### Authentication
+    All API requests require authentication using an API key. You can obtain an API key from your Listee account settings.
+
+    ```
+    Authorization: Bearer YOUR_API_KEY
+    ```
+
+    ### Security Requirements
+    API keys have full access to your Listee account data. Always follow these security best practices:
+
+    - Store API keys as environment variables, never in source code
+    - Never commit API keys to version control systems
+    - Rotate keys periodically for enhanced security
+    - Use IP restrictions where possible in production environments
+
+    ### Rate Limiting
+    To ensure service stability, the API implements rate limiting. Exceeding these limits will result in `429 Too Many Requests` responses. Rate limits are applied per API key.
+
+    ### Endpoints
+
+    #### Categories
+    Manage your task categories.
+
+    #### Tasks
+    Create, update, and organize tasks within categories.
+
+    ### Error Handling
+
+    Error responses include a JSON body with details:
+
+    ```json
+    {
+      "error": {
+        "code": "error_code",
+        "message": "Description of the error",
+        "details": { /* Optional: Additional error details */ }
+      }
+    }
+    ```
+
+    Common error codes and their corresponding HTTP status codes:
+
+    | Error Code | HTTP Status | Description |
+    |------------|-------------|-------------|
+    | bad_request | 400 | The request was malformed or invalid |
+    | unauthorized | 401 | Authentication is required or failed |
+    | forbidden | 403 | You don't have permission to access this resource |
+    | not_found | 404 | The requested resource was not found |
+    | conflict | 409 | The request conflicts with the current state |
+    | validation_error | 422 | The request data failed validation |
+    | too_many_requests | 429 | You've exceeded the rate limit |
+    | internal_error | 500 | An unexpected server error occurred |
+
+    ### Terms of Service
+    By using the Listee API, you agree to comply with our [API Terms of Service](https://listee.in/legal/terms/api). These terms include important information about permitted use, data handling responsibilities, and limitations.
+
+    ### Support
+    If you have any questions or need assistance with the API, please contact our developer support team at [`listee@gen-ltd.jp`](mailto:listee@gen-ltd.jp).
+
+servers:
+  - url: https://listee.in/api/v1
+    description: Default server
+
+components:
+  schemas:
+    Category:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        kind:
+          type: string
+        isAlexaEnabled:
+          type: boolean
+        createdBy:
+          type: string
+          format: uuid
+        updatedBy:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+
+    CategoryInput:
+      type: object
+      properties:
+        name:
+          type: string
+      required:
+        - name
+
+    Task:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        isChecked:
+          type: boolean
+        categoryId:
+          type: string
+          format: uuid
+      required:
+        - id
+        - name
+        - categoryId
+
+    TaskInput:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+      required:
+        - name
+
+    TaskUpdateInput:
+      type: object
+      properties:
+        name:
+          type: string
+      required:
+        - name
+
+    TaskStatusUpdateInput:
+      type: object
+      properties:
+        isChecked:
+          type: boolean
+      required:
+        - isChecked
+
+    TaskReorderInput:
+      type: object
+      properties:
+        orderIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+      required:
+        - orderIds
+
+    TaskBulkDeleteInput:
+      type: object
+      properties:
+        taskIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+      required:
+        - taskIds
+
+    TaskMoveInput:
+      type: object
+      properties:
+        taskIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+        fromCategoryId:
+          type: string
+          format: uuid
+        toCategoryId:
+          type: string
+          format: uuid
+      required:
+        - taskIds
+        - fromCategoryId
+        - toCategoryId
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+
+    CategoriesResponse:
+      type: object
+      properties:
+        categories:
+          type: array
+          items:
+            $ref: "#/components/schemas/Category"
+
+  securitySchemes:
+    ApiKeyHeader:
+      type: apiKey
+      in: header
+      name: x-api-key
+      description: API Key passed in the x-api-key header
+    ApiKeyBearer:
+      type: http
+      scheme: bearer
+      description: API Key passed as Bearer token in Authorization header
+
+security:
+  - ApiKeyHeader: []
+  - ApiKeyBearer: []
+
+paths:
+  /categories:
+    get:
+      summary: Get all user categories
+      operationId: getUserCategories
+      tags:
+        - Categories
+      responses:
+        "200":
+          description: A list of user categories
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CategoriesResponse"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+
+    post:
+      summary: Create a new category
+      operationId: createCategory
+      tags:
+        - Categories
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CategoryInput"
+      responses:
+        "201":
+          description: Category created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Category"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "400":
+          description: Bad request
+
+  /categories/{categoryId}:
+    parameters:
+      - name: categoryId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    get:
+      summary: Get category by ID
+      operationId: getCategoryById
+      tags:
+        - Categories
+      responses:
+        "200":
+          description: Category retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Category"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Category not found
+
+    put:
+      summary: Update category
+      operationId: updateCategory
+      tags:
+        - Categories
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CategoryInput"
+      responses:
+        "200":
+          description: Category updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Category"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Category not found
+        "400":
+          description: Bad request
+
+    delete:
+      summary: Delete category
+      operationId: deleteCategory
+      tags:
+        - Categories
+      responses:
+        "200":
+          description: Category deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Category not found
+
+  /categories/{categoryId}/tasks:
+    parameters:
+      - name: categoryId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      summary: Get all tasks in a category
+      operationId: getTasksByCategory
+      tags:
+        - Tasks
+      responses:
+        "200":
+          description: A list of tasks in the category
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tasks:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Task"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Category not found
+    post:
+      summary: Create a new task in a category
+      operationId: createTask
+      tags:
+        - Tasks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TaskInput"
+      responses:
+        "201":
+          description: Task created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Category not found
+        "400":
+          description: Bad request
+
+  /categories/{categoryId}/tasks/{taskId}:
+    parameters:
+      - name: categoryId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: taskId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    put:
+      summary: Update task
+      operationId: updateTask
+      tags:
+        - Tasks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TaskUpdateInput"
+      responses:
+        "200":
+          description: Task updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Task or category not found
+        "400":
+          description: Bad request
+
+    delete:
+      summary: Delete task
+      operationId: deleteTask
+      tags:
+        - Tasks
+      responses:
+        "200":
+          description: Task deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Task or category not found
+
+  /categories/{categoryId}/tasks/{taskId}/status:
+    parameters:
+      - name: categoryId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: taskId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    put:
+      summary: Update task status (checked/unchecked)
+      operationId: updateTaskStatus
+      tags:
+        - Tasks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TaskStatusUpdateInput"
+      responses:
+        "200":
+          description: Task status updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Task or category not found
+        "400":
+          description: Bad request
+
+  /categories/{categoryId}/tasks/reorder:
+    parameters:
+      - name: categoryId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    put:
+      summary: Reorder tasks within a category
+      operationId: reorderTasks
+      tags:
+        - Tasks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TaskReorderInput"
+      responses:
+        "200":
+          description: Tasks reordered successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Category not found
+        "400":
+          description: Bad request
+
+  /categories/{categoryId}/tasks/bulk-delete:
+    parameters:
+      - name: categoryId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    post:
+      summary: Delete multiple tasks from a category
+      operationId: bulkDeleteTasks
+      tags:
+        - Tasks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TaskBulkDeleteInput"
+      responses:
+        "200":
+          description: Tasks deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Category not found
+        "400":
+          description: Bad request
+
+  /tasks/move:
+    post:
+      summary: Move tasks from one category to another
+      operationId: moveTasks
+      tags:
+        - Tasks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TaskMoveInput"
+      responses:
+        "200":
+          description: Tasks moved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Category not found
+        "400":
+          description: Bad request

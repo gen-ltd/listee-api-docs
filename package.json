@@ -1,0 +1,32 @@
+{
+  "name": "listee-api-docs",
+  "version": "1.0.0",
+  "description": "API documentation for Listee - Task Management API",
+  "scripts": {
+    "dev": "npx @redocly/cli preview-docs openapi.yaml -p 8080",
+    "build": "npx @redocly/cli build-docs openapi.yaml -o public/index.html",
+    "lint": "npx @redocly/cli lint openapi.yaml"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gen-ltd/listee-api-docs.git"
+  },
+  "keywords": [
+    "api",
+    "documentation",
+    "tasks",
+    "categories",
+    "listee",
+    "openapi",
+    "redoc"
+  ],
+  "author": "Gen Tamura <gen.tamura84@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/gen-ltd/listee-api-docs/issues"
+  },
+  "homepage": "https://github.com/gen-ltd/listee-api-docs#readme",
+  "devDependencies": {
+    "@redocly/cli": "^1.4.0"
+  }
+}
