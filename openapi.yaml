@@ -177,6 +177,18 @@ components:
       required:
         - taskIds
 
+    TaskBulkUncheckInput:
+      type: object
+      properties:
+        taskIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: List of task IDs to uncheck
+      required:
+        - taskIds
+
     TaskMoveInput:
       type: object
       properties:
@@ -567,6 +579,51 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SuccessResponse"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Category not found
+        "400":
+          description: Bad request
+
+  /categories/{categoryId}/tasks/bulk-uncheck:
+    parameters:
+      - name: categoryId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: ID of the category containing the tasks
+
+    post:
+      summary: Uncheck multiple tasks at once
+      description: Marks multiple tasks as unchecked without changing their order in the list
+      operationId: bulkUncheckTasks
+      tags:
+        - Tasks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TaskBulkUncheckInput"
+      responses:
+        "200":
+          description: Tasks unchecked successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  taskIds:
+                    type: array
+                    items:
+                      type: string
+                      format: uuid
+                    description: IDs of the tasks that were unchecked
         "401":
           description: Unauthorized
         "403":
